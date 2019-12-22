@@ -4,14 +4,14 @@ import glob
 from upload import compare
 
 
-def foldercompare(video):
-    IMG_FOLDER = video
+def foldercompare():
+    # IMG_FOLDER = video
     # path_list = os.listdir(IMG_FOLDER)
-    path_list = glob.glob(r'./results/*.jpg')
+    path_list = glob.glob(r'./09chen/*.jpg')
     # for py in path_list:
     #     print(py)
 
-    newdir_path = os.path.join("./", "09chen")
+    newdir_path = os.path.join("./", "09face")
     os.mkdir(newdir_path)
 
     for img2_path in path_list:
@@ -24,16 +24,16 @@ def foldercompare(video):
         #     continue
         try:
             diff = compare(img1_path, img2_path)
-        except AttributeError:
+        except AttributeError: # can't identify face
             print("can't:", img2_path)
             continue
         if diff < 0.9:
-            shutil.move(img2_path, newdir_path)
+            # shutil.move(img2_path, newdir_path)
             print("img2:", img2_path)
 
     # shutil.move(img1_path, newdir_path)
-    print("end:\n", video)
+    # print("end:\n", video)
 
 img1 = "081209934_person_0.jpg"
 img1_path = os.path.join('./', img1) # 09chen
-foldercompare('./results')
+foldercompare()
