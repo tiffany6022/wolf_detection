@@ -18,7 +18,6 @@ def predict(input):
     # ex: return model(data).numpy()
     return model.predict(input)
 
-
 def segmentation(input):
     # 利用 skimage 提供的 segmentation 將圖片分成 100 塊
     return slic(input, n_segments=100, compactness=1, sigma=1)
@@ -57,6 +56,7 @@ def explain(input, img, y, pred_class, imgclass, img_name):
         plt.imsave(f'./explanation/crop_verysure/{y}{pred_class}_{imgclass}_{img_name[:9]}.jpg', lime_img)
 
 
+# random select 30 images
 def select(path, imgclass):
     images = os.listdir(path)
     random.shuffle(images)
