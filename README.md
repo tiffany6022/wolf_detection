@@ -20,7 +20,7 @@ ffmpeg -i add_videos/0311.mp4 -ss 00:01:32 -to 00:31:05 -c copy ./add_videos/031
 
 ### Convert Video to Images
 * ffmpeg
-  * mkdir to store images
+  * make directory to store images
 ```sh
 mkdir add_videos/0311_images
 ```
@@ -45,6 +45,9 @@ scp -r results tiffany@merry.ee.ncku.edu.tw:~/git/wolf_detection/
 
 ### Detect 09chen
 * facenet
+  * execute in facenet directory
+  * save in ./09face/
+  * delete not 09 by filezilla
 ```sh
 python identify.py
 ```
