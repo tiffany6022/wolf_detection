@@ -1,6 +1,9 @@
 from PIL import Image
 import os
+import shutil
 
+shutil.rmtree('./crop09')
+os.mkdir('./crop09')
 
 imgs = os.listdir("./09face")
 
