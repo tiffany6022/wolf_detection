@@ -63,14 +63,14 @@ def episode_divide(path, wolf_total, good_total):
     tg_list, df = pick_ep(df, test_good, 'good')
     vw_list, df = pick_ep(df, val_wolf, 'wolf')
     vg_list, df = pick_ep(df, val_good, 'good')
-    save(tw_list, test_path)
-    save(tg_list, test_path)
-    save(vw_list, validation_path)
-    save(vg_list, validation_path)
+    save(tw_list, test_path, 0)
+    save(tg_list, test_path, 0)
+    save(vw_list, validation_path, 0)
+    save(vg_list, validation_path, 0)
     train_list = []
     for index, row in df.iterrows():
         train_list.append(row['date'])
-    save(train_list, train_path)
+    save(train_list, train_path, 1)
 
 def pick_ep(df, num, role):
     # pick this role's dataframe and save in dict
@@ -99,9 +99,9 @@ def pick_ep(df, num, role):
         df = df[df['date'] != i[0]]
     return pick_list, df
 
-def save(pick_list, save_path):
+def save(pick_list, save_path, is_train):
     for i in pick_list:
-        if pick_list == 'train_list':
+        if is_train:
             date = i
         else:
             date = i[0]
@@ -127,8 +127,8 @@ if __name__ == '__main__':
     path = 'crop09'
     wolf, god, civil, total = count_role(path)
 
-    if argv[1] == 'random':
+    if argv[1] == 'rd':
         randomly_divide(path, total)
-    elif argv[1] == 'episode':
+    elif argv[1] == 'ep':
         episode_divide(path, wolf, god+civil)
 
