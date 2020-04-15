@@ -5,8 +5,10 @@ from tensorflow.keras.layers import MaxPooling2D # Pooling
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Dense # Fully Connected Networks
 from tensorflow.keras.layers import Dropout
+from tensorflow.keras.layers import Input, Add, BatchNormalization, GlobalAveragePooling2D, Activation
 from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import Model
 
 from keras.utils import np_utils
 
@@ -57,6 +59,74 @@ def build_input_data(data):
     return (x_data, y_data)
 
 
+def identity_block(model, filter1, filter2, filter3):
+
+    shortcut = model
+
+    model = Conv2D(filter1, kernel_size=(1, 1), padding='same')(model)
+    model = BatchNormalization(axis=3)(model)
+    model = Activation('relu')(model)
+
+    model = Conv2D(filter2, kernel_size=(3, 3), padding='same')(model)
+    model = BatchNormalization(axis=3)(model)
+    model = Activation('relu')(model)
+
+    model = Conv2D(filter3, kernel_size=(1, 1), padding='same')(model)
+    model = BatchNormalization(axis=3)(model)
+
+    model = Add()([shortcut, model])
+    model = Activation('relu')(model)
+
+    return model
+
+def conv_block(model, filter1, filter2, filter3):
+
+    model = Conv2D(filter3, kernel_size=(1, 1), padding='same')(model)
+    shortcut = BatchNormalization(axis=3)(model)
+
+    model = Conv2D(filter1, kernel_size=(1, 1), padding='same')(model)
+    model = BatchNormalization(axis=3)(model)
+    model = Activation('relu')(model)
+
+    model = Conv2D(filter2, kernel_size=(3, 3), padding='same')(model)
+    model = BatchNormalization(axis=3)(model)
+    model = Activation('relu')(model)
+
+    model = Conv2D(filter3, kernel_size=(1, 1), padding='same')(model)
+    model = BatchNormalization(axis=3)(model)
+
+    model = Add()([shortcut, model])
+    model = Activation('relu')(model)
+
+    return model
+def build_resnet():
+
+    inputs = Input(shape=(115, 160, 3))
+
+    model = Conv2D(64, kernel_size=(7, 7), padding='same')(inputs)
+    model = BatchNormalization(axis=3)(model)
+    model = Activation('relu')(model)
+    model = MaxPooling2D()(model)
+
+    model = conv_block(model, 64, 64, 256)
+    model = identity_block(model, 64, 64, 256)
+    model = identity_block(model, 64, 64, 256)
+
+    model = conv_block(model, 128, 128, 512)
+    model = identity_block(model, 128, 128, 512)
+    model = identity_block(model, 128, 128, 512)
+
+    # model = conv_block(model, 256, 256, 1024)
+    # model = identity_block(model, 256, 256, 1024)
+    # model = identity_block(model, 256, 256, 1024)
+    # model = identity_block(model, 256, 256, 1024)
+    #
+    model = GlobalAveragePooling2D()(model)
+
+    model = Dense(2, activation = 'softmax')(model)
+
+    return Model(inputs, model)
+
 def build_model():
     # initializing CNN
     model = Sequential()
@@ -92,7 +162,8 @@ if "__main__" == __name__:
     (x_test, y_test) = build_input_data('test')
     (x_validation, y_validation) = build_input_data('validation')
 
-    model = build_model()
+    # model = build_model()
+    model = build_resnet()
     model.summary()
     optimizer = Adam(lr=0.0003)
     model.compile(optimizer = optimizer, loss = 'categorical_crossentropy', metrics = ['accuracy'])
