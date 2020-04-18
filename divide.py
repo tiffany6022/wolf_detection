@@ -6,6 +6,7 @@ import random
 import glob
 from sys import argv
 from count import count_role
+import pandas as pd
 
 
 # clear files in the directory
@@ -18,13 +19,19 @@ def clear(path1, path2, path3):
     os.mkdir(path3)
 
 # random division
-def randomly_divide(path, total):
-    train_path = './division/random2000/train'
-    validation_path = './division/random2000/validation'
-    test_path = './division/random2000/test'
+def randomly_divide(path, total, date_list):
+    train_path = './division/ep2_rd8/train'
+    validation_path = './division/ep2_rd8/validation'
+    test_path = './division/ep2_rd8/test'
     clear(train_path, validation_path, test_path)
 
-    images = os.listdir(path)
+    images = []
+    if len(date_list) == 0: # all
+        images = glob.glob(f"./{path}/*")
+    else:
+        for i in range(len(date_list)):
+            img = glob.glob(f'./{path}/{date_list[i]}*')
+            images = images + img
     random.shuffle(images)
     images_num = total
     test_num = images_num / 5 # 1/5
@@ -32,47 +39,42 @@ def randomly_divide(path, total):
     train_num = images_num - test_num - validation_num # 3/5
     counter = 0
 
-    for i in images:
+    for i in range(len(images)):
         counter += 1
-        i_path = f'./{path}/' + i
+        # i_path = f'./{path}/' + i
         if counter <= test_num:
-           shutil.copy(i_path, test_path)
+           shutil.copy(images[i], test_path)
         elif counter > test_num and counter <= test_num + validation_num:
-           shutil.copy(i_path, validation_path)
+           shutil.copy(images[i], validation_path)
         else:
-           shutil.copy(i_path, train_path)
+           shutil.copy(images[i], train_path)
 
 # episode division
-def episode_divide(path, wolf_total, good_total):
-    train_path = './division/episode2000/train'
-    validation_path = './division/episode2000/validation'
-    test_path = './division/episode2000/test'
-    clear(train_path, validation_path, test_path)
+def episode_divide(df, path, wolf_total, good_total, ep_total):
+    train_path = './division/ep2_rd8/validation'
+    validation_path = './division/ep2_rd8/validation'
+    test_path = './division/ep2_rd8/test'
+    # clear(train_path, validation_path, test_path)
 
     # count how many images that test and val need
     test_wolf = val_wolf = wolf_total / 5
     test_good = val_good = good_total / 5
 
-    # open dataframe in pickle
-    pkl_path = os.path.join(os.path.dirname(__file__), 'details.pkl')
-    with open(pkl_path, 'rb') as file:
-        df = pickle.load(file)
-
     # pick which episode and save
-    tw_list, df = pick_ep(df, test_wolf, 'wolf')
-    tg_list, df = pick_ep(df, test_good, 'good')
-    vw_list, df = pick_ep(df, val_wolf, 'wolf')
-    vg_list, df = pick_ep(df, val_good, 'good')
-    save(tw_list, test_path, 0)
-    save(tg_list, test_path, 0)
-    save(vw_list, validation_path, 0)
-    save(vg_list, validation_path, 0)
+    tw_list, df = pick_ep(df, test_wolf, 'wolf', int(ep_total/5/2))
+    tg_list, df = pick_ep(df, test_good, 'good', int(ep_total/5/2))
+    vw_list, df = pick_ep(df, val_wolf, 'wolf', int(ep_total/5/2))
+    vg_list, df = pick_ep(df, val_good, 'good', int(ep_total/5/2))
+    save(tw_list, test_path, path, 0)
+    save(tg_list, test_path, path, 0)
+    save(vw_list, validation_path, path, 0)
+    save(vg_list, validation_path, path, 0)
     train_list = []
     for index, row in df.iterrows():
         train_list.append(row['date'])
-    save(train_list, train_path, 1)
+    save(train_list, train_path, path, 1)
 
-def pick_ep(df, num, role):
+def pick_ep(df, num, role, pick_ep_num):
     # pick this role's dataframe and save in dict
     if role == 'wolf':
         role_df = df[df['role'] == 'wolf']
@@ -87,9 +89,9 @@ def pick_ep(df, num, role):
     # random add episode number to fit test or val needs
     pick_list = []
     distance = 100
-    while(abs(distance) > 5):
+    while(abs(distance) > 50):
         pick_num = 0
-        get_eps = random.randint(3,7)
+        get_eps = random.randint(pick_ep_num-2, pick_ep_num+2)
         pick_list = random.sample(list(role_dict.items()), k=get_eps)
         for i in pick_list:
             pick_num = pick_num + int(i[1])
@@ -99,7 +101,7 @@ def pick_ep(df, num, role):
         df = df[df['date'] != i[0]]
     return pick_list, df
 
-def save(pick_list, save_path, is_train):
+def save(pick_list, save_path, path, is_train):
     for i in pick_list:
         if is_train:
             date = i
@@ -110,25 +112,49 @@ def save(pick_list, save_path, is_train):
         for j in save_list:
             shutil.copy(j, save_path)
 
-# old-version
-# for i in images:
-#     i_path = './crop09/' + i
-#     if i[:4] == '1211' or i[:4] == '0203' or i[:4] == '0122' or i[:4] == '1213' or i[:4] == '0523' or i[:4] == '0531':
-#         shutil.copy(i_path, test_path)
-#     elif i[:4] == '0114' or i[:4] == '0815' or i[:4] == '0816' or i[:4] == '0911' or i[:4] == '0926' or i[:4] == '1029':
-#         shutil.copy(i_path, validation_path)
-#     elif i[:4] == '0210' or i[:4] == '0120' or i[:4] == '0101' or i[:4] == '0524' or i[:4] == '0628' or i[:4] == '0719'\
-#     or i[:4] == '0701' or i[:4] == '0729' or i[:4] == '0807' or i[:4] == '0812' or i[:4] == '0918' or i[:4] == '0925'\
-#     or i[:4] == '1007' or i[:4] == '1008' or i[:4] == '1014' or i[:4] == '1118' or i[:4] == '1206' or i[:4] == '1204':
-#         shutil.copy(i_path, train_path)
-#
+def proportionally_divide(percent, df, ep_total, total, path):
+    ep_percent = percent
+    rd_percent = 10 - percent
+    ep_wolf = int(total * (ep_percent / 10) / 2)
+    ep_good = int(total * (ep_percent / 10) / 2)
+    ew_list, remain_df = pick_ep(df, ep_wolf, 'wolf', int(ep_total/2/2))
+    eg_list, remain_df = pick_ep(remain_df, ep_good, 'good', int(ep_total/2/2))
+
+    # random
+    rd_date_list = remain_df['date'].tolist()
+    rd_total = remain_df['num'].sum()
+    randomly_divide(path, rd_total, rd_date_list)
+
+    # episode
+    pick_df = pd.DataFrame()
+    for i in ew_list:
+        pick_df = pick_df.append(df[df['date'] == i[0]], ignore_index=True)
+    for i in eg_list:
+        pick_df = pick_df.append(df[df['date'] == i[0]], ignore_index=True)
+    print(pick_df)
+    wolf_df = pick_df[pick_df['role'] == 'wolf']
+    wolf = wolf_df['num'].sum()
+    god_df = pick_df[pick_df['role'] == 'god']
+    god = god_df['num'].sum()
+    civil_df = pick_df[pick_df['role'] == 'civilian']
+    civil = civil_df['num'].sum()
+    episode_divide(pick_df, path, wolf, god+civil, ep_total-remain_df.shape[0])
 
 if __name__ == '__main__':
     path = 'crop09'
     wolf, god, civil, total = count_role(path)
 
+    # open dataframe in pickle
+    pkl_path = os.path.join(os.path.dirname(__file__), 'details.pkl')
+    with open(pkl_path, 'rb') as file:
+        df = pickle.load(file)
+    ep_total = df.shape[0]
+    date_list = []
+
     if argv[1] == 'rd':
-        randomly_divide(path, total)
+        randomly_divide(path, total, date_list)
     elif argv[1] == 'ep':
-        episode_divide(path, wolf, god+civil)
+        episode_divide(df, path, wolf, god+civil, ep_total)
+    elif argv[1] == 'pp':
+        proportionally_divide(5, df, ep_total, total, path)
 
