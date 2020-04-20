@@ -16,7 +16,7 @@ def count_ep(path):
     return video
 
 # Count how many photos each role has
-def count_role(path):
+def count_role(path, df):
     total = 0
     wolf = 0
     civil = 0
@@ -24,9 +24,6 @@ def count_role(path):
     images = os.listdir(path)
     for img_name in images:
         total += 1
-        pkl_path = os.path.join(os.path.dirname(__file__), 'details.pkl')
-        with open(pkl_path, 'rb') as file:
-            df = pickle.load(file)
         date_mask = df['date'] == img_name[:4]
         if df[date_mask]['role'].isin(['wolf']).bool():
             wolf += 1
@@ -34,19 +31,6 @@ def count_role(path):
             god += 1
         elif df[date_mask]['role'].isin(['civilian']).bool():
             civil += 1
-
-        # old-version
-        # if img_name[:4] == '0524' or img_name[:4] == '0531' or img_name[:4] == '0628' or img_name[:4] == '0719' or img_name[:4] == '0807'\
-        # or img_name[:4] == '0812' or img_name[:4] == '0815' or img_name[:4] == '0816' or img_name[:4] == '0925' or img_name[:4] == '1007'\
-        # or img_name[:4] == '1213' or img_name[:4] == '0101' or img_name[:4] == '0113' or img_name[:4] == '0114' or img_name[:4] == '0120'\
-        # or img_name[:4] == '0121' or img_name[:4] == '0210' or img_name[:4] == '0213' or img_name[:4] == '0220' or img_name[:4] == '0225'\
-        # or img_name[:4] == '1115' or img_name[:4] == '0930' or img_name[:4] == '0916' or img_name[:4] == '0805' or img_name[:4] == '0731'\
-        # or img_name[:4] == '0228' or img_name[:4] == '0722' or img_name[:4] == '0517' or img_name[:4] == '0115':
-        #     wolf += 1
-        # elif img_name[:4] == '1206' or img_name[:4] == '0701' or img_name[:4] == '0918' or img_name[:4] == '1014' or img_name[:4] == '1118':
-        #     god += 1
-        # else:
-        #     civil += 1
 
     return wolf, god, civil, total
 
@@ -62,7 +46,62 @@ def count_role(path):
 #     print(f"wolf:{wolf} god:{god} civil:{civil}")
 #     print(f"Wolf Probability:{wolf/total}")
 
+# in order to varify that I didn't divide wrong proportion
+def count_pp(dir_path, df):
+
+    # record random videos
+    rd = []
+    train = count_ep(dir_path + 'train')
+    test = count_ep(dir_path + 'test')
+    val = count_ep(dir_path + 'validation')
+    for k in test.keys():
+        if k in rd: continue
+        if train.__contains__(k): rd.append(k)
+    for k in train.keys():
+        if k in rd: continue
+        if val.__contains__(k): rd.append(k)
+    for k in val.keys():
+        if k in rd: continue
+        if test.__contains__(k): rd.append(k)
+    # print(rd)
+
+    # calculate ep?_rd? proportion
+    train_rd = train_ep = train_rd_wolf = 0
+    test_rd = test_ep = test_rd_wolf  = 0
+    val_rd = val_ep = val_rd_wolf  = 0
+    wolf_list = df[df['role'] == 'wolf']['date'].tolist()
+    for k,v in train.items():
+        if k in rd:
+            train_rd = train_rd + v
+            if k in wolf_list:
+                train_rd_wolf = train_rd_wolf + v
+        else: train_ep = train_ep + v
+    for k,v in test.items():
+        if k in rd:
+            test_rd = test_rd + v
+            if k in wolf_list:
+                test_rd_wolf = test_rd_wolf + v
+        else: test_ep = test_ep + v
+    for k,v in val.items():
+        if k in rd:
+            val_rd = val_rd + v
+            if k in wolf_list:
+                val_rd_wolf = val_rd_wolf + v
+        else: val_ep = val_ep + v
+    print(f"train(rd): {train_rd/(train_rd+train_ep)}")
+    print(f"test(rd): {test_rd/(test_rd+test_ep)}")
+    print(f"val(rd): {val_rd/(val_rd+val_ep)}")
+    print(f"train_wolf(rd) {train_rd_wolf/(train_rd+train_ep)}")
+    print(f"test_wolf(rd) {test_rd_wolf/(test_rd+test_ep)}")
+    print(f"val_wolf(rd) {val_rd_wolf/(val_rd+val_ep)}")
+
+
 if __name__ == '__main__':
+
+    pkl_path = os.path.join(os.path.dirname(__file__), 'details.pkl')
+    with open(pkl_path, 'rb') as file:
+        df = pickle.load(file)
+
     if len(argv) == 3:
         function = argv[1]
         path = argv[2]
@@ -74,7 +113,9 @@ if __name__ == '__main__':
         video = count_ep(path)
         print(json.dumps(video, indent = 4))
     elif function == 'role':
-        wolf, god, civil, total = count_role(path)
+        wolf, god, civil, total = count_role(path, df)
         print(f"wolf:{wolf} god:{god} civil:{civil}")
         print(f"Wolf Probability:{wolf/total}")
+    elif function == 'pp':
+        count_pp(path, df)
 
