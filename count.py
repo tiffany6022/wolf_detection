@@ -63,9 +63,10 @@ def count_proportion(dir_path, df):
     random_date.extend(intersection(train_eps_images, val_eps_images))
     random_date.extend(intersection(test_eps_images, val_eps_images))
     random_date = list(dict.fromkeys(random_date)) # delete duplicate date
-    print(random_date)
+    print(f"random: {random_date}")
 
     # calculate ep?_rd? proportion (train, test, validation)
+    print("train, test, validation:")
     wolf_list = df[df['role'] == 'wolf']['date'].tolist()
     for dataset_eps_images in [train_eps_images, test_eps_images, val_eps_images]:
         rd_num = ep_num = rd_num_wolf = 0
